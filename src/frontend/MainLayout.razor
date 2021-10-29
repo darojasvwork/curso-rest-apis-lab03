@@ -6,11 +6,17 @@
 
 <div>
     @helloWorld
+    @data
 </div>
 
 @code {
-    string helloWorld = "Hello, World! C#";
-
+    string helloWorld = "Hello, World! C# 2";
+    private string data="Nda";
+    protected override async Task OnInitializedAsync()
+    {
+        this.data = await Http.GetStringAsync("/api/products");
+        StateHasChanged();
+    }
     /*
     private string data;
 
@@ -18,7 +24,7 @@
     {
         this.data = await Http.GetStringAsync("/api/v1/Hello");
     }
-    
+
     @foreach (var forecast in data)
     {
         <tr>

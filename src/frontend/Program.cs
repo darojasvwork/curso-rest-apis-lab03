@@ -6,17 +6,17 @@ namespace Frontend
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Configuration;
 
     public class Program
     {
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("#app");
-
+            builder.RootComponents.Add<App>("#app");           
             builder.Services.AddScoped(sp => new HttpClient { 
-                BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
-            });
+                BaseAddress = new Uri("https://localhost:5003/")
+        });
 
             // dotnet run --project src/frontend/Frontend.csproj --urls "http://*:80"
             await builder.Build().RunAsync();

@@ -1,0 +1,103 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Core.Data;
+
+namespace Dotnet_Backend
+{
+    // dotnet run --urls="http://+:5000;https://+:5001"
+    public class ProgramBase
+    {
+        public static void Main(string[] args)
+            =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<ProgramBase>();
+                }).Build().Run();
+
+        public ProgramBase(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowOrigin",
+                                builder =>
+                                {
+                                    builder.AllowAnyOrigin()
+                                           .AllowAnyHeader()
+                                           .AllowAnyMethod();
+                                });
+            });
+
+            services.AddDbContext<AdventureWorksDbContext>(
+                options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("AdventureWorks")));
+
+            services.AddScoped<AdventureWorksDbContext>();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            
+
+            app.UseHttpsRedirection();
+
+            app.UseRouting();
+            app.UseCors("AllowOrigin");
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGet("/", context =>
+                {
+                    context.Response.Redirect("/api/hello");
+                    return Task.CompletedTask;
+                });
+
+                endpoints.MapGet("api/hello", async context =>
+                {
+                    await context.Response.WriteAsJsonAsync<object[]>(
+                        new object[]{
+                        "Hello",
+                        "World"
+                    });
+                });
+
+                endpoints.MapGet("api/products", async context =>
+                {
+                    var dbContext = context.Request.HttpContext.RequestServices.GetRequiredService<AdventureWorksDbContext>();
+
+                    await context.Response.WriteAsJsonAsync<object[]>(
+                        dbContext.Products.Select(p =>
+                            new {
+                                Id = p.ProductId,
+                                Name = p.Name,
+                                ListPrice = p.ListPrice
+                            }).ToArray()
+                    );
+                });
+            });
+        }
+    }
+}
